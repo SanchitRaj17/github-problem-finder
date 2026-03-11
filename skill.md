@@ -17,18 +17,15 @@ Find and document difficult, complex problems from GitHub repos that AI agents c
 
 If any warning or error would lower the problem's difficulty/complexity, tell the user immediately before proceeding.
 
-## Step 1: Read Examples First
 
-BEFORE searching the repo, read all files in `examples/` folder. These establish the minimum difficulty threshold. Any problem found must be AT LEAST as complex as these examples. Also identify the dominant problem type from the examples (feature request vs bug vs enhancement); prioritize that type first when searching.
-
-## Step 2: Find Problem
+## Step 1: Find Problem
 
 Identify a **real-world engineering problem** in the repository.
 
 Prioritize problems that are:
 - **Cross-cutting and substantial** — the task should require changes across multiple files or modules, not a small isolated edit
-- **Long-horizon** — the expected solution should involve sustained reasoning and implementation effort, at least 3+ files changed, 100+ agent steps, and 400+ LOC added 
-- **Hard but solvable** — the problem should be difficult enough that most AI agents will fail, but still realistic for at least one strong agent to succeed
+- **Long-horizon** — the expected solution should involve sustained reasoning and implementation effort, at least 3+ files changed and 400+ LOC added to the solution paatch.
+- **Hard but solvable** — At least 1 agent solves it (solvable). No more than 3 solve it, with at most 1 Nova (hard). Successful runs touch 3+ files and take 100+ steps (scope), For this give description needs more clarity.
 - **Grounded in the real codebase** — prefer genuine bugs, missing capabilities, architectural gaps, or incomplete workflows over artificial or toy tasks
 
 Use the repository to discover such problems by:
@@ -48,16 +45,14 @@ Also ensure the problem can support **fair testing**:
 - Any correct solution should be able to pass
 - All requirements, constraints, and necessary interface definitions must be stated explicitly
 
-**Type Priority**:
-- If examples are feature requests, search feature requests first; if none, then bugs; then enhancements.
-- If examples are bugs, search bugs first; if none, then feature requests; then enhancements.
-- If examples are enhancements, search enhancements first; if none, then bugs; then feature requests.
 
 **Difficulty Criteria** (ALL required):
 - Requires understanding multiple interconnected components
 - No existing PR addresses the issue
 - Solution requires non-obvious implementation decisions
 - Cannot be solved by simple pattern matching
+- At least 3+ files edited 
+- At least 400 Lines of code in the solution patch
 
 **Verify**: Compare candidate against examples. If not as difficult, find another.
 
