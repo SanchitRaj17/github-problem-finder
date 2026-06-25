@@ -26,7 +26,7 @@ Prioritize problems that are:
 - **Cross-cutting and substantial** — the task should require changes across multiple files or modules, not a small isolated edit
 - **Long-horizon** — the expected solution should involve sustained reasoning and implementation effort, at least 3+ files changed and 400+ LOC added to the solution paatch.
 - **Hard but solvable** — At least 1 agent solves it (solvable). No more than 3 solve it, with at most 1 Nova (hard). Successful runs touch 3+ files and take 100+ steps (scope), For this give description needs more clarity.
-- **Grounded in the real codebase** — prefer genuine bugs, missing capabilities, architectural gaps, or incomplete workflows over artificial or toy tasks
+- **Grounded in the real codebase** — Always choose tasks with no upstream rejection, missing capabilities, architectural gaps, or incomplete workflows over artificial or toy tasks
 
 Use the repository to discover such problems by:
 - Reviewing open issues such as `bug`, `enhancement`, and `feature-request`
@@ -48,6 +48,7 @@ Also ensure the problem can support **fair testing**:
 
 **Difficulty Criteria** (ALL required):
 - Requires understanding multiple interconnected components
+- Any sort of UPSTREAM REJECTION is a blocker
 - No existing PR addresses the issue
 - Solution requires non-obvious implementation decisions
 - Cannot be solved by simple pattern matching

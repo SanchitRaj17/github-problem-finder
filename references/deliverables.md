@@ -15,31 +15,23 @@ Unified diff format. Must include test.sh and test files.
 - Generate using `git diff --cached`
 
 **test.sh Structure (Required):**
+
 ```bash
 #!/bin/bash
 set -e
 
-case "$1" in
-  base)
-    # Run existing tests - should pass at base commit
-    [test command for existing tests]
-    ;;
-  new)
-    # Run only new tests - should fail before solution
-    [test command for new tests only]
-    ;;
-  *)
-    echo "Usage: ./test.sh {base|new}"
-    exit 1
-    ;;
-esac
+./test.sh --output_path <path> {base|new}
 ```
 
 **test.sh Rules:**
-- `./test.sh base` runs existing tests (must pass at base commit)
-- `./test.sh new` runs ONLY new tests (must fail before solution)
-- NO package installs in test.sh (use Dockerfile)
-- Exclude flaky tests from base if needed
+
+* Accept `--output_path <path>` and write JUnit XML to the specified path.
+* Use the project's native JUnit output or a standard JUnit library. **Do not hand-write XML.**
+* `./test.sh --output_path results.xml base` runs existing tests as a regression check. Must pass.
+* `./test.sh --output_path results.xml new` runs only new or modified tests. Must fail before the solution patch is applied.
+* NO package installs in `test.sh` (use Dockerfile).
+* Exclude flaky tests from `base` if needed.
+
 
 **Patch Format:**
 ```diff
@@ -54,14 +46,25 @@ index 0000000..abc1234
 
 ## Dockerfile
 
-**Must start with:**
+**Must start with the appropriate Olympus base image for the repository's language:**
+
 ```dockerfile
-FROM public.ecr.aws/x8v8d7g8/mars-base:latest
+FROM public.ecr.aws/d3j8x8q7/olympus-base-<language>:latest
 ```
 
+Supported languages:
+
+* Python: `olympus-base-python`
+* TypeScript / JavaScript: `olympus-base-typescript`
+* Go: `olympus-base-go`
+* Rust: `olympus-base-rust`
+* Java (JVM): `olympus-base-jvm`
+* C++: `olympus-base-cpp`
+
 **Structure:**
+
 ```dockerfile
-FROM public.ecr.aws/x8v8d7g8/mars-base:latest
+FROM public.ecr.aws/d3j8x8q7/olympus-base-<language>:latest
 
 WORKDIR /app
 
@@ -70,7 +73,9 @@ COPY . .
 RUN [install dependencies here]
 
 CMD ["bash"]
+
 ```
+
 
 **Requirements:**
 - All package installs in Dockerfile, not test.sh
