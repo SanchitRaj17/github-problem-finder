@@ -2,7 +2,6 @@
 
 Run these commands exactly and in order.
 Expectations: base must pass, new must fail before solution; base and new must pass after solution.
-
 ```bash
 git apply test.patch
 docker build -t <<repo name>> .

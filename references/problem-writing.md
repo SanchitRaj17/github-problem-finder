@@ -1,7 +1,6 @@
 # Problem Writing Tips
-
 - Write a behavioral requirement: what should happen and why, not how.
-- Give just enough calrity that at least 1 Agent can solve it but not so much that it becomes to easy.
+- Give just enough clarity that at least 1 Agent can solve it but not so much that it becomes too easy.
 - Do not leak implementation details or solution strategy.
 - Do not include anything that is obvious from the repository.
 - Do not include repository conventions or default expectations.

@@ -14,7 +14,6 @@ $tmp_dir = New-TemporaryFile | ForEach-Object { Remove-Item $_; New-Item -ItemTy
 
 try {
     New-Item -ItemType Directory -Path ".codex/skills" -Force | Out-Null
-
     Write-Host "Cloning skill from: $REPO_URL"
     git clone --depth 1 "$REPO_URL" "$tmp_dir" 2>&1 | Out-Null
 
@@ -22,7 +21,6 @@ try {
         Remove-Item -Recurse -Force "$DEST"
     }
     New-Item -ItemType Directory -Path "$DEST" -Force | Out-Null
-
     Copy-Item "$tmp_dir/skill.md" "$DEST/skill.md" -Force
     if (Test-Path "$tmp_dir/references") {
         Copy-Item -Recurse "$tmp_dir/references" "$DEST/references" -Force

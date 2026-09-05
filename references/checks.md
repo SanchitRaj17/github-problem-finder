@@ -4,12 +4,10 @@
 
 1. `Problem AI difficulty` - Must be genuinely hard for AI
 2. `holistic_ai_judge` - AI overall assessment
-
 ## Problem Checks
-
 | Check | Requirement |
 |-------|-------------|
-| description_length | 100-200 words |
+| description_length | Prefer under 200 words; hard maximum 1000 words when completeness/fairness requires it |
 | category_match | Bug/Feature/Enhancement matches content |
 | Problem AI difficulty | Genuinely hard for AI |
 | Problem Quality Check | Well-structured, clear |
@@ -22,7 +20,6 @@
 | necessary_info_only | No extraneous details |
 | problem_test_alignment | Tests match description |
 | dockerfile_valid | Dockerfile runs |
-
 ## Solution Checks
 
 | Check | Requirement |
@@ -32,7 +29,6 @@
 | code_quality | Matches repo style |
 | holistic_ai_judge | AI overall assessment |
 | problem_precision_and_alignment | Solution matches problem |
-
 ## Handling Conflicts
 
 When checks conflict (e.g., one says remove line, another says explanation required):
@@ -41,7 +37,6 @@ When checks conflict (e.g., one says remove line, another says explanation requi
 3. Find middle ground that satisfies both
 4. Make minimal changes (fix for one may break another)
 5. Flag conflicts to user before proceeding
-
 ## Common Failures
 
 1. Tests too weak - trivial implementation can pass

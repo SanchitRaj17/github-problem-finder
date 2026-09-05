@@ -20,7 +20,6 @@ git clone --depth 1 "$REPO_URL" "$tmp_dir" >/dev/null
 
 rm -rf "$DEST"
 mkdir -p "$DEST"
-
 cp "$tmp_dir/skill.md" "$DEST/skill.md"
 [[ -d "$tmp_dir/references" ]] && cp -R "$tmp_dir/references" "$DEST/references"
 [[ -d "$tmp_dir/examples"   ]] && cp -R "$tmp_dir/examples"   "$DEST/examples"

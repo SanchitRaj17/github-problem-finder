@@ -9,7 +9,6 @@ Find difficult bugs, feature requests, or enhancements in GitHub repositories th
 ```powershell
 .\scripts\install.ps1 https://github.com/SanchitRaj17/github-problem-finder
 ```
-
 ### Linux/macOS/Git Bash (Windows)
 
 ```bash
