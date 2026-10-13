@@ -3,8 +3,10 @@
 ## Requirements
 
 - Include a clear problem title
-- Prefer under 200 words when complete and fair; use additional detail when necessary, up to the hard maximum of 1000 words
-- Never omit, weaken, or make a requirement ambiguous merely to stay under 200 words
+- Target 200 words or fewer; exceed 200 only when necessary for completeness, fairness, or clarity, with a hard maximum of 1000 words
+- Maximum 13 total requirements. Count coherent behavioral rules, not every example, edge case, branch, or test case separately
+- Combine closely related cases under one governing requirement when they express the same behavior or invariant
+- If more than 13 requirements remain, regroup or narrow the description before presenting it; do not hide unrelated behaviors inside one requirement just to satisfy the cap
 - Valid UTF-8 only (no non-ASCII characters)
 - No motivational backstory
 
@@ -37,3 +39,7 @@ When Vary: Cookie is absent and cookie matching isn't requested, continue ignori
 - States what should happen (include cookies in cache key)
 - Mentions related feature (ignored_cookies option)
 - Does NOT explain how to implement
+
+## Manual humanized prompt handoff
+
+`problem.md` is the immutable initial draft. Create `humanized_prompt.md` as its exact copy, then stop for the user to edit it manually. After the user confirms `go ahead`, apply the same task-format and requirement-budget rules to `humanized_prompt.md`, and treat it as the active contract without changing the original `problem.md`.

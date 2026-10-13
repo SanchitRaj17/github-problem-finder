@@ -1,8 +1,10 @@
 # Solution Writing Checklist
 
+After the manual handoff, `humanized_prompt.md` is the authoritative task contract. The original `problem.md` is frozen and non-authoritative for downstream patch scope.
+
 Use this file while constructing the solution. Exhaustive adversarial validation belongs to the Solution Validator in `references/solution-validator.md`; do not duplicate that full audit in the main agent.
 
-- Implement every requirement in the problem statement.
+- Implement every requirement in `humanized_prompt.md`.
 - Fix the underlying invariant/root cause, not only the demonstrated reproduction.
 - Avoid hardcoded values, fixture-specific branches, and test gaming.
 - Preserve existing working behavior and public contracts.
@@ -11,10 +13,11 @@ Use this file while constructing the solution. Exhaustive adversarial validation
 - Handle relevant state/lifecycle, failure, cleanup, repeated-call, and sibling-path behavior consistently.
 - Do not introduce AI-generated artifacts such as weird comments, unexplained defensive code, unnecessary abstraction, or new patterns inconsistent with the repository.
 - Every meaningful diff hunk must be necessary for the task or its required integration.
+- Keep the reference solution behaviorally minimal: implement the active contract and required existing compatibility, but avoid speculative robustness, convenience semantics, broader fallback behavior, or extra API support that the task does not require. Extra reference behavior can create false-positive differentials against otherwise valid rollout solutions.
 
 ## Construction Questions
 
-- Is every stated requirement implemented across all required paths?
+- Is every requirement in `humanized_prompt.md` implemented across all required paths?
 - Does the fix address the general rule rather than only the exact test/example?
 - Could any existing caller, state transition, failure path, or sibling implementation regress?
 - Is state mutated at the correct time and cleaned up correctly on failure?

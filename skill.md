@@ -18,6 +18,7 @@ The fixed platform rules summarized in this `skill.md` are always authoritative.
 - **After user approval:** load `references/deliverables.md`, `references/test-writing.md`, `references/solution-writing.md`, and `references/subagent-runtime.md`.
 - **Miyamura:** load `references/test-validator.md` when beginning test validation.
 - **Witcher:** load `references/solution-validator.md` when beginning solution validation.
+- **FP Validator:** load `references/false-positive-validator.md` once both `test.patch` and `solution.patch` exist.
 - **Docker verification:** load `references/docker-verification.md` only when Docker verification is actually requested.
 
 Do not repeatedly reload reference files already understood unless the relevant rule is uncertain or the artifact changed in a way that requires re-checking it. If validator advice conflicts with a fixed platform syntax rule, preserve the platform syntax rule and solve the quality issue another way.
@@ -25,12 +26,23 @@ Do not repeatedly reload reference files already understood unless the relevant 
 ### problem.md fixed rules
 
 - Include a clear problem title.
-- Prefer `problem.md` under 200 words when the behavior can be specified completely and fairly within that space. Completeness and fairness take priority over brevity; use additional detail when necessary, up to the platform hard maximum of 1000 words. Never omit, weaken, or make a requirement ambiguous merely to stay under 200 words.
+- Target `problem.md` at **200 words or fewer**. Exceed 200 only when the task cannot remain complete, fair, and unambiguous otherwise; the platform hard maximum remains 1000 words. Do not spend extra words enumerating cases that can be expressed as one governing behavior.
+- **Hard requirement budget: maximum 13 requirements total.** Count coherent behavioral rules, not every example, branch, edge case, or test case as a separate requirement. Combine closely related cases under one governing requirement when they express the same behavior or invariant. Never allow the final requirement count to exceed 13; if it would, regroup or narrow the wording before presenting `problem.md`. Do not hide unrelated behaviors inside one requirement merely to game the count.
 - Use valid UTF-8 only with no non-ASCII characters.
 - No motivational backstory.
 - Describe user-visible behavior and must-have requirements, not implementation.
 - Do not include pseudocode, code snippets, regexes, shell commands, procedural steps, test names/files, repository conventions, or unnecessary backward-compatibility notes.
 - Include method signatures only when they are not obvious from the repository.
+
+### Humanized prompt handoff and source of truth
+
+`problem.md` is the immutable initial draft. Once it is written, do not edit, rewrite, humanize, synchronize, or replace it later in the candidate lifecycle.
+
+Immediately after creating `problem.md`, create a separate root-level file named `humanized_prompt.md` as an exact copy of the current `problem.md`. Then STOP and ask the user to manually update `humanized_prompt.md`. Do not create patches, Dockerfile, `test.sh`, or spawn validators yet.
+
+When the user confirms the manual edit is complete and says `go ahead`, re-read `humanized_prompt.md`. From that point onward, `humanized_prompt.md` is the **authoritative active task contract** for all downstream work, including requirement counting, test construction, solution construction, Miyamura, Witcher, final acceptance, rollout calibration, and later hints. `problem.md` remains frozen only as the original draft/reference and MUST NOT be changed.
+
+Do not silently copy later edits from `humanized_prompt.md` back into `problem.md`. Do not use `problem.md` to override or re-expand the manually edited active contract after the handoff.
 
 ### test.patch fixed rules
 
@@ -136,7 +148,7 @@ Before presenting deliverables, always verify:
 4. `test.sh` supports the required `--output_path` JUnit interface;
 5. Dockerfile uses the correct Olympus base image;
 6. Dockerfile does not reference `test.sh` or `test.patch`;
-7. every claim in `problem.md` is directly covered by at least one meaningful new test;
+7. after the manual handoff, every claim in `humanized_prompt.md` is directly covered by at least one meaningful new test;
 8. no test introduces a requirement absent from or undiscoverable from the task/repository.
 
 ### Docker verification command contract
@@ -171,18 +183,19 @@ The main agent is the builder and orchestrator. Deep validation must be delegate
 
 This skill requires Codex multi-agent support for delegated validation. Before the first validation gate, read `references/subagent-runtime.md` and use the built-in `spawn_agent`, `send_input`, `wait_agent`, and `close_agent` tools.
 
-After the user approves `problem.md`, spawn exactly two validator subagents once and keep them alive for the rest of the candidate lifecycle:
+After the user manually updates `humanized_prompt.md` and confirms `go ahead`, spawn Miyamura and Witcher once. Spawn the third specialist, **FP Validator**, once both `test.patch` and `solution.patch` exist. Keep all spawned validators alive for the rest of the candidate lifecycle.
 
 1. **Miyamura** - the Test Validator.
 2. **Witcher** - the Solution Validator.
+3. **FP Validator** - the False Positive / Reference Scope Validator.
 
-Reuse these same two live validator contexts for every later audit round. Do not close and respawn them merely to obtain a new audit.
+Reuse the same live validator contexts for later audit rounds. Do not close and respawn them merely to obtain a new audit.
 
-Miyamura recursively audits `problem.md` + `test.patch` using `references/test-validator.md`. Witcher recursively audits `problem.md` + `solution.patch` using `references/solution-validator.md`.
+Miyamura recursively audits `humanized_prompt.md` + `test.patch` using `references/test-validator.md`. Witcher recursively audits `humanized_prompt.md` + `solution.patch` using `references/solution-validator.md`. FP Validator compares `humanized_prompt.md` + `test.patch` + `solution.patch` using `references/false-positive-validator.md`, looking only for meaningful missing discriminators and reference overbuild. After the handoff, all validators must treat `humanized_prompt.md`, not `problem.md`, as the task contract.
 
 Do not merely role-play these validators inside the main context. A delegated PASS is valid only if it came from an actual spawned subagent. If the required multi-agent tools are unavailable, stop the validation gate and tell the user multi-agent support must be enabled; do not silently downgrade to main-agent self-validation.
 
-Do not create extra validator roles unless the user explicitly requests them.
+Do not create validator roles beyond Miyamura, Witcher, and FP Validator unless the user explicitly requests them.
 
 ### Delegation Rule
 
@@ -190,37 +203,38 @@ The main agent must NOT duplicate the exhaustive validator audits. The main agen
 
 - inspect the repository once to identify the core affected subsystem, likely files, relevant existing tests, and public behavior
 - run the pre-PD non-plagiarism, upstream/public-solved, and throwaway prototype footprint gates
-- create `problem.md`, `test.patch`, Dockerfile, `test.sh`, and `solution.patch`
+- create immutable `problem.md`, create `humanized_prompt.md` for the user handoff, then after confirmation create `test.patch`, Dockerfile, `test.sh`, and `solution.patch` from the active `humanized_prompt.md` contract
 - run deterministic platform/harness checks itself
 - send the relevant artifacts plus the initial repository map to validators
+- use FP Validator only for missing-discriminator and reference-overbuild risk; do not duplicate its scoped differential audit in the main context
 - fix concrete validator findings
 - send updated artifacts back to the same live validators and require complete current-state re-audits until the acceptance gate is satisfied
 
-Avoid repeated whole-repository reconnaissance. Miyamura and Witcher should begin from the main agent's repository map and expand into additional files only when a concrete audit question requires it. Validators are adversarial critics, not helpers. They must actively try to disprove the candidate or artifact.
+Avoid repeated whole-repository reconnaissance. Miyamura and Witcher should begin from the main agent's repository map and expand into additional files only when a concrete audit question requires it. Validators are adversarial critics, not helpers. Miyamura and Witcher actively try to disprove their artifacts. FP Validator is calibrated rather than maximalist: it must catch material false-positive risk without making tests unnecessarily airtight.
 
 ### Persistent Validator Lifecycle
 
-Spawn Miyamura and Witcher once per candidate and keep both alive until end-to-end validation is complete. Fresh audit is mandatory; fresh agent is not.
+Spawn Miyamura and Witcher once per candidate after `go ahead`. Spawn FP Validator once both patches exist. Keep all three alive until end-to-end validation is complete. Fresh audit is mandatory; fresh agent is not.
 
 After the main agent applies fixes, use `send_input` to give the updated current artifacts/instructions to the same validator contexts, then `wait_agent` for the next verdict. Do not close and respawn them between ordinary audit rounds.
 
 Every round must still be a complete current-state audit. Validators must treat the latest artifacts as authoritative, re-run their full audit contract, actively search for new defects beyond earlier findings, and must not return PASS merely because previous findings were fixed. Previous findings may inform context but must not constrain the search space.
 
-A task is complete only when Miyamura and Witcher each return the required High-confidence PASS on the latest complete current-state audit and the final platform checks pass. Close both validators after end-to-end validation is complete, or earlier only if the candidate workflow itself is finished and no further validation is required.
+A task is complete only when Miyamura and Witcher each return the required High-confidence PASS, FP Validator has no High finding and returns its scoped High-confidence PASS, and the final platform checks pass. Close all three validators after end-to-end validation is complete, or earlier only if the candidate workflow itself is finished and no further validation is required.
 
 ## Subagent Runtime Preflight
 
-After `problem.md` is approved and before creating further deliverables, verify the runtime exposes `spawn_agent`, `send_input`, `wait_agent`, and `close_agent`. Follow `references/subagent-runtime.md` exactly for the persistent Miyamura/Witcher lifecycle.
+After the user confirms the manual `humanized_prompt.md` edit and says `go ahead`, before creating further deliverables verify the runtime exposes `spawn_agent`, `send_input`, `wait_agent`, and `close_agent`. Follow `references/subagent-runtime.md` exactly for the persistent Miyamura/Witcher lifecycle and the staged FP Validator spawn.
 
 The skill itself does not define these as shell/Python functions; they are Codex runtime tools. The validator prompt is passed through the `message` field of each `spawn_agent` call, so the spawned agent receives its role and audit contract directly.
 
-Use `fork_turns: all` unless the live runtime requires another supported value. Use the fixed task names `miyamura` for the Test Validator and `witcher` for the Solution Validator. Store the returned agent identifiers/handles. For later rounds, use `send_input` with the existing validator target, then `wait_agent`; do not spawn duplicate Miyamura/Witcher contexts while the originals are still active.
+Use `fork_turns: all` unless the live runtime requires another supported value. Use the fixed task names `miyamura` for the Test Validator, `witcher` for the Solution Validator, and `fp_validator` for the False Positive Validator. Store the returned agent identifiers/handles. For later rounds, use `send_input` with the existing validator target, then `wait_agent`; do not spawn duplicate validator contexts while the originals are still active.
 
 ## Accepted Candidate Ledger
 
 The main agent maintains a compact **Accepted Candidate Ledger** across repeated candidate searches in the same session. The ledger is internal working state only and MUST NOT be added to platform deliverables.
 
-When the user clearly accepts the current candidate and asks for another (for example, “good job, make another candidate”), treat the current candidate as accepted before starting discovery again. If Miyamura/Witcher are still live, close them for the completed candidate. Record a compact fingerprint containing:
+When the user clearly accepts the current candidate and asks for another (for example, “good job, make another candidate”), treat the current candidate as accepted before starting discovery again. If Miyamura/Witcher/FP Validator are still live, close them for the completed candidate. Record a compact fingerprint containing:
 
 - problem title / one-line behavior summary
 - core invariant or root-cause theme
@@ -233,7 +247,7 @@ When the user clearly accepts the current candidate and asks for another (for ex
 
 Before considering every later candidate, compare it against all ledger entries. A different issue number, title, wording, or file is NOT enough: reject a provisional candidate if it substantially duplicates a prior candidate's behavior/invariant, root cause, API change, implementation path, affected feature, or benchmark concept. Similar difficulty and ~300-400 meaningful LOC scope are encouraged; conceptual plagiarism is not.
 
-To protect this memory during long sessions/context compression, keep the ledger compact and, when scratch-file access is available, mirror it to a temporary file **outside the repository working tree**. Never stage, commit, or include that scratch ledger in any deliverable. The main agent owns this ledger; candidate-specific Miyamura/Witcher contexts do not carry prior-candidate history.
+To protect this memory during long sessions/context compression, keep the ledger compact and, when scratch-file access is available, mirror it to a temporary file **outside the repository working tree**. Never stage, commit, or include that scratch ledger in any deliverable. The main agent owns this ledger; candidate-specific validator contexts do not carry prior-candidate history.
 
 ## Workflow
 
@@ -241,14 +255,16 @@ To protect this memory during long sessions/context compression, keep the ledger
 2. **Discover a Provisional Candidate** - Perform one focused repository reconnaissance pass and compare it against the Accepted Candidate Ledger.
 3. **Run the Upstream Gate** - Search upstream/public sources before committing to the candidate. Publicly solved or substantially matching behavior/API is an immediate pre-PD rejection.
 4. **Run the Prototype Footprint Gate** - Build a throwaway minimal genuine solution prototype, measure meaningful production-code LOC, require `>300` meaningful LOC without padding/overbuilding, then completely discard the prototype. Target roughly 300-400 meaningful LOC.
-5. **Select + Write `problem.md` Immediately** - Only after both pre-PD gates pass, lock the candidate and immediately draft `problem.md`.
-6. **Mandatory Approval Gate** - STOP after `problem.md`; present it and wait for explicit user approval before creating any further deliverable or spawning validators.
-7. **Spawn Validators Once** - After approval, spawn persistent Miyamura and Witcher and immediately give them parallel repo/problem analysis work.
-8. **Build + Validate in Parallel** - Main builds `test.patch`, `solution.patch`, Dockerfile, and `test.sh`; Miyamura begins full test audit as soon as `test.patch` exists, Witcher begins full solution audit as soon as `solution.patch` exists, and Main validates Dockerfile/test.sh deterministically as soon as they exist.
-9. **Targeted Fix Loop** - Fix blocking findings, run focused affected checks, and use delta-first complete re-audits with the same validators. Do not loop on Low or discretionary T3/T4 findings.
-10. **Final Verification Gate** - Once blocking findings are clear, run the complete required local/platform verification; run the full Docker base/new/solution sequence only if Docker verification is requested.
-11. **Close Validators** - Close Miyamura and Witcher after end-to-end validation is complete.
-12. **Repeat on Acceptance** - If the user accepts the candidate and asks for another, snapshot it into the Accepted Candidate Ledger and restart from Step 2 with the same gates.
+5. **Select + Write `problem.md` Immediately** - Only after both pre-PD gates pass, lock the candidate and immediately draft immutable `problem.md`.
+6. **Create `humanized_prompt.md` + Manual Handoff** - Copy `problem.md` exactly into root-level `humanized_prompt.md`, STOP, and ask the user to manually update that file. Do not continue yet.
+7. **User Confirmation Gate** - Wait for the user to confirm the manual edit is complete and say `go ahead`. Re-read `humanized_prompt.md`; it now replaces `problem.md` as the authoritative active task contract. `problem.md` stays unchanged.
+8. **Spawn Core Validators Once** - Spawn persistent Miyamura and Witcher and immediately give them parallel repo/active-contract analysis work.
+9. **Build + Validate in Parallel** - Main builds `test.patch`, `solution.patch`, Dockerfile, and `test.sh` from `humanized_prompt.md`; Miyamura begins full test audit as soon as `test.patch` exists, Witcher begins full solution audit as soon as `solution.patch` exists, and Main validates Dockerfile/test.sh deterministically as soon as they exist.
+10. **Spawn FP Validator** - As soon as both patches exist, spawn persistent `fp_validator`. It probes only for meaningful missing discriminators and reference overbuild, with High blocking, Medium pass-with-caveat, Low ignored.
+11. **Targeted Fix Loop** - Fix blocking findings, run focused affected checks, and use delta-first re-audits with the same validators. Do not loop on Low or discretionary findings, and do not over-tighten tests solely to eliminate FP caveats.
+12. **Final Verification Gate** - Once blocking findings are clear, run the complete required local/platform verification; run the full Docker base/new/solution sequence only if Docker verification is requested.
+13. **Close Validators** - Close Miyamura, Witcher, and FP Validator after end-to-end validation is complete.
+14. **Repeat on Acceptance** - If the user accepts the candidate and asks for another, snapshot it into the Accepted Candidate Ledger and restart from Step 2 with the same gates.
 
 If any warning or error would lower the problem's difficulty/complexity, tell the user immediately before proceeding.
 
@@ -331,40 +347,43 @@ Only now **select/lock the candidate**. Immediately proceed to Step 2 and write 
 
 Immediately after the provisional candidate passes the non-plagiarism, Upstream, and Prototype Footprint gates and is selected/locked, create `problem.md` before spawning validators or creating any other deliverable. Use `references/formatting.md` and `references/problem-writing.md` for all problem.md requirements and tips.
 
-Prefer a concise description under 200 words when the task can be specified completely and fairly within that space. Completeness and fairness take priority over brevity; use additional detail when necessary, up to the platform hard maximum of 1000 words. Never omit, weaken, or make a requirement ambiguous merely to stay under 200 words.
+Target a concise description of **200 words or fewer**. Exceed 200 only when necessary to keep the task complete, fair, and unambiguous; the hard maximum remains 1000 words. Before presenting the draft, count only distinct top-level behavioral obligations and ensure there are **no more than 13 total**. Do not count every clause, edge case, branch, example, or test case as its own requirement when it belongs to the same governing behavior or invariant. Combine those related cases under one requirement. If more than 13 genuinely distinct requirements remain, regroup or narrow the task wording before the approval stop.
 
-### Mandatory Approval Gate
+### Mandatory Humanized-Prompt Handoff Gate
 
-**STOP immediately after writing `problem.md`.** Present `problem.md` and state whether the problem is a feature request, bug, or enhancement, then wait for explicit user approval such as `go ahead`.
+Immediately after writing `problem.md`, freeze it. Create root-level `humanized_prompt.md` as an exact copy of `problem.md`. Then **STOP** and ask the user to manually update `humanized_prompt.md` and say `go ahead` when finished.
 
-Before approval, DO NOT:
+Before the user confirms the manual edit, DO NOT:
 
+- modify `problem.md`
 - spawn Miyamura or Witcher
 - create or modify `test.patch`
 - create or modify `solution.patch`
 - create Dockerfile or `test.sh`
 - begin any deliverable/reference implementation or delegated validation work; the mandatory pre-PD throwaway prototype must already be fully discarded and MUST NOT be continued or reused
 
-If the user requests changes, revise only `problem.md` and stop again for approval. Do not proceed to further deliverables until the current `problem.md` is explicitly approved.
+When the user says `go ahead`, re-read `humanized_prompt.md` from disk. From this point onward it is the authoritative active task contract. Validate its requirement budget and formatting rules, but do not automatically rewrite it unless the user asks. Keep `problem.md` unchanged for the rest of the candidate lifecycle.
+
+If the user asks for changes before `go ahead`, apply them only to `humanized_prompt.md` unless they explicitly ask otherwise. Do not sync those edits back into `problem.md`.
 
 ## Step 3: Spawn Validators and Create Deliverables
 
-Only after user approval, run the multi-agent runtime preflight and spawn the two persistent validators once:
+Only after the user confirms the manual `humanized_prompt.md` edit and says `go ahead`, re-read the file, run the multi-agent runtime preflight, and spawn the two core validators once:
 
 - **Miyamura** - Test Validator
 - **Witcher** - Solution Validator
 
-Keep both alive for the remaining end-to-end validation lifecycle. Immediately give each validator a preliminary analysis task, then create the remaining deliverables in parallel.
+Keep both alive for the remaining end-to-end validation lifecycle. Immediately give each validator a preliminary analysis task, then create the remaining deliverables in parallel. Do not spawn FP Validator yet; wait until both `test.patch` and `solution.patch` exist so it can perform the actual differential probe.
 
 Give both validators the main agent's focused repository map: affected subsystem, likely changed files, relevant existing tests, public APIs/behavior, and any known lifecycle or integration boundaries. They should expand beyond this map only when a concrete audit question requires it.
 
-- **Miyamura** studies `problem.md`, the repository map, relevant existing tests, and public behavior; maps requirements, likely mutants, boundaries, lifecycle/state interactions, and coverage risks while the main agent builds `test.patch`.
-- **Witcher** studies `problem.md`, the repository map, relevant implementation paths, callers, invariants, repository conventions, and regression risks while the main agent builds `solution.patch`.
+- **Miyamura** studies `humanized_prompt.md`, the repository map, relevant existing tests, and public behavior; maps requirements, likely mutants, boundaries, lifecycle/state interactions, and coverage risks while the main agent builds `test.patch`.
+- **Witcher** studies `humanized_prompt.md`, the repository map, relevant implementation paths, callers, invariants, repository conventions, and regression risks while the main agent builds `solution.patch`.
 - These preliminary analyses are preparation only. Full PASS/FAIL verdicts must wait until the relevant patch exists and a complete current-state audit is performed.
 
 ### Deliverable Construction
 
-After user approval and after Miyamura/Witcher have been spawned and given their preliminary tasks, the main agent creates the deliverables while both validators analyze in parallel. Load `references/deliverables.md`, `references/test-writing.md`, and `references/solution-writing.md` at this stage.
+After the manual handoff is confirmed and Miyamura/Witcher have been spawned and given their preliminary tasks, the main agent creates the deliverables while both core validators analyze in parallel. Load `references/deliverables.md`, `references/test-writing.md`, and `references/solution-writing.md` at this stage.
 
 Use artifact-triggered validation instead of waiting for every deliverable to finish:
 
@@ -376,7 +395,7 @@ Do not wait for all four artifacts before beginning useful validation. Do not ch
 
 ## Step 4: Recursive Validation Gate
 
-After `test.patch` and `solution.patch` exist, coordinate the artifact-triggered audits already started in Step 3. Do not automatically start duplicate full audits if Miyamura or Witcher is already auditing the current patch. If an audit has not started yet, dispatch it now. Keep exhaustive validation out of the main context.
+After `test.patch` and `solution.patch` exist, coordinate the artifact-triggered Miyamura/Witcher audits already started in Step 3. Do not automatically start duplicate full audits. If the FP Validator has not yet been spawned, spawn `fp_validator` now with `humanized_prompt.md`, `test.patch`, `solution.patch`, the focused repository map, and relevant established public behavior. Keep delegated validation out of the main context.
 
 ### Miyamura — Test Validator
 
@@ -384,7 +403,7 @@ If Miyamura is not already auditing the current `test.patch`, send the patch-val
 
 Provide:
 
-- `problem.md`
+- `humanized_prompt.md`
 - `test.patch`
 - relevant repository code
 - existing tests and public behavior needed to judge regressions/discoverability
@@ -409,30 +428,48 @@ If Witcher is not already auditing the current `solution.patch`, send the soluti
 
 Provide:
 
-- `problem.md`
+- `humanized_prompt.md`
 - `solution.patch`
 - relevant repository code and callers
 - existing tests or conventions needed to judge regressions and consistency
 
 Witcher owns exhaustive S1-S12 analysis, requirement completeness, root-cause correctness, state/lifecycle correctness, cross-component consistency, regression analysis, failure behavior, concurrency/async ordering where relevant, scope discipline, and repository conformity.
 
+### FP Validator - False Positive / Reference Scope Validator
+
+Spawn this specialist once both patches exist and keep it alive across later changes. It must read and obey `references/false-positive-validator.md`.
+
+Provide:
+
+- `humanized_prompt.md`
+- `test.patch`
+- `solution.patch`
+- relevant public repository APIs/behavior and existing compatibility evidence
+
+It has exactly two jobs:
+
+1. probe the reference solution for required public behavior that a realistic incomplete agent solution could omit while still passing the current tests;
+2. identify meaningful reference behavior outside the active contract that should be trimmed rather than turned into more tests.
+
+Its calibration is intentionally less strict than Miyamura. **High is blocking, Medium is PASS with caveat, Low is ignored.** It must not make the suite airtight merely to eliminate theoretical differentials. Before recommending a new test, it must consider whether the discriminator is likely to matter in the platform FP panel and whether the added difficulty threatens the target of at least one genuine rollout solve and ideally 1-5/10 passes. Prefer trimming reference overbuild to expanding tests.
+
 ### Validation Loop
 
-Run both validators independently and in parallel whenever possible. Keep their outputs concise and actionable.
+Run Miyamura, Witcher, and FP Validator independently and in parallel whenever their required artifacts are available. Keep outputs concise and actionable.
 
-Maintain a small audit ledger in the main context, for example `T4-H1 fixed`, `T4-M2 skipped`, `S2-H1 fixed`. Resolved findings should not be re-explained unless they regress; the ledger is for coordination only and never replaces a complete audit.
+Maintain a small audit ledger in the main context, for example `T4-H1 fixed`, `T4-M2 skipped`, `S2-H1 fixed`, `FP-H1 fixed`, `FP-M2 caveat`. Resolved findings should not be re-explained unless they regress; the ledger is for coordination only and never replaces a complete audit.
 
 For every round:
 
-1. Receive concise concrete findings from both validators: category/severity, exact gap, one realistic failing or surviving-bad case, and the minimum required fix. Avoid essays.
-2. Fix every valid blocking finding. For Miyamura T3/T4 findings: **High must be fixed, Medium is the main agent's call, Low is ignored**. For other validator categories, preserve their normal blocking severity rules.
+1. Receive concise concrete findings from the validators: category/severity, exact gap, one realistic failing or surviving-bad case, and the minimum required fix. Avoid essays.
+2. Fix every valid blocking finding. For Miyamura T3/T4 findings: **High must be fixed, Medium is the main agent's call, Low is ignored**. For FP Validator: **High must be fixed, Medium is PASS with caveat / main agent's call, Low is ignored**. Do not add a test for an FP Medium merely to make the suite airtight.
 3. During iteration, run the smallest focused tests/checks that exercise the changed behavior. Do not repeatedly run the full base/new/Docker matrix after every small edit unless a platform/harness change requires it.
-4. Send only the updated artifacts/diff plus any necessary changed context back to the same validators. Require a **delta-first, complete current-state re-audit**: inspect what changed first, then perform the full confidence sweep required by the validator contract.
+4. Send only the updated artifacts/diff plus any necessary changed context back to the affected persistent validators. Require a **delta-first, complete current-state re-audit**: inspect what changed first, then perform the full confidence sweep required by the validator contract.
 5. Require each validator to search for genuinely new gaps beyond earlier findings. Previous findings may guide attention but must not limit the search. Do not spend tokens re-reporting resolved issues unless they have reappeared.
-6. Continue until there are no blocking findings and both validators return PASS **with `Confidence: High` under their validator PASS contracts** on the latest artifacts. Miyamura may still report non-blocking Medium T3/T4 notes; these do not prevent acceptance unless the main agent judges that they enable a realistic false positive. A PASS without High confidence is not an acceptance.
+6. Continue until there are no blocking findings, Miyamura and Witcher return PASS **with `Confidence: High`**, and FP Validator returns its scoped High-confidence PASS with no High risk. Miyamura may still report non-blocking Medium T3/T4 notes and FP Validator may still report Medium caveats; these do not prevent acceptance. A PASS without the required confidence is not an acceptance.
 7. Near completion, run the full required local/platform verification once against the final artifacts. If Docker verification was explicitly requested, run the exact full Docker base/new/solution sequence at this point.
-8. If final verification forces any change to `problem.md`, `test.patch`, or `solution.patch`, send only the changed artifact/diff back to the affected validator and require another High-confidence current-state audit. If verification causes no artifact change, do not spend tokens on a redundant second PASS audit.
-9. Once end-to-end validation is complete, close Miyamura and Witcher with `close_agent`.
+8. If final verification forces any change to `humanized_prompt.md`, `test.patch`, or `solution.patch`, send only the changed artifact/diff back to every affected validator. Any test/solution/active-contract change that can alter the reference/test differential must also be re-probed by FP Validator. If verification causes no artifact change, do not spend tokens on a redundant second PASS audit.
+9. Once end-to-end validation is complete, close Miyamura, Witcher, and FP Validator with `close_agent`.
 
 If a validator repeatedly reports the same issue, fix the underlying invariant rather than patching only the cited example. Prefer a small number of high-discrimination tests that kill broad classes of bad implementations over many shallow edge-case tests.
 
@@ -442,7 +479,8 @@ The acceptance burden is asymmetric: findings require one concrete defect, but P
 
 Do not present the final task unless all are true:
 
-- every explicit behavioral promise in `problem.md` has meaningful semantic test coverage
+- `humanized_prompt.md` contains no more than 13 total requirements, using coherent grouped behavioral rules rather than inflated per-case counting
+- every explicit behavioral promise in `humanized_prompt.md` has meaningful semantic test coverage
 - no concrete plausible materially incorrect implementation associated with a blocking test finding can pass
 - no **High/blocking T3/T4** coverage gap remains; Medium T3/T4 findings are discretionary and Low findings are ignored unless the main agent determines they enable a realistic false positive
 - no blocking non-T3/T4 boundary, lifecycle, state, interaction, sibling-path, negative-space, fairness, execution, or regression gap remains
@@ -453,7 +491,8 @@ Do not present the final task unless all are true:
 - the solution fixes the underlying behavior rather than only the demonstrated example
 - no concrete regression or required-path omission remains
 - solution changes are relevant, repository-conventional, and free of AI-generated artifacts
-- both persistent validators pass the latest complete current-state audit with High confidence
+- Miyamura and Witcher pass the latest complete current-state audit with High confidence
+- FP Validator reports no High missing-discriminator or reference-overbuild risk; Medium FP caveats are allowed and remain non-blocking
 
 ## Post-Rollout Calibration (When Rollout Results Are Provided)
 
@@ -462,13 +501,13 @@ Use rollout ZIPs/summaries to calibrate solvability without weakening discrimina
 If the first rollout cycle is `0/10`:
 
 1. inspect all rollout summaries, prioritizing the strongest near-pass and any blocker repeated across multiple agents;
-2. add the **smallest high-confidence implementation hint** to `problem.md` that addresses the common conceptual/implementation bottleneck;
+2. add the **smallest high-confidence implementation hint** to `humanized_prompt.md` that addresses the common conceptual/implementation bottleneck;
 3. prefer a useful directional hint over a vague one, but do not reveal exact code or the complete reference solution;
 4. treat test changes as the **last resort** and change tests only if rollout evidence shows they are unfair, incorrect, over-pinned, or require undiscoverable behavior;
 5. before using the hint, verify it creates no new blocking T1-T12/S1-S12 gap and does not create a false-positive path. At least two plausible incorrect implementations that follow the hint should still be rejected by the tests;
 6. use rollout evidence to justify why the hint is likely to convert at least one failure into a genuine pass while keeping the expected pass rate at or below `5/10`.
 
-If Miyamura/Witcher are still live, reuse them for the hint safety audit. If they were already closed, respawn only Miyamura and Witcher for this calibration audit, then close them when the hint is validated. Never replace the selected candidate because of rollout difficulty; refine the same candidate.
+Never copy rollout-hint edits back into frozen `problem.md`. If validators are still live, reuse Miyamura and Witcher for hint safety and re-run FP Validator whenever the hint changes the active contract or expected reference/test differential. If they were already closed, respawn only the validators required for that calibration, then close them when the hint is validated. Never replace the selected candidate because of rollout difficulty; refine the same candidate.
 
 If the next cycle lands at `1-5/10` genuine passes, keep the task unless another quality defect exists. If it exceeds `5/10`, first reduce an over-strong hint or audit test discrimination; do not intentionally make requirements ambiguous.
 

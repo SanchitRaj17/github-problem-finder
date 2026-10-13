@@ -6,6 +6,10 @@ Your job is to find correctness defects, incomplete requirements, regressions, u
 
 Tests passing is evidence, not proof. Perform the full audit from scratch on every validation round.
 
+## Active Task Contract
+
+After the manual handoff, `humanized_prompt.md` is the sole authoritative task contract. The original `problem.md` is frozen and must not be used to reintroduce requirements the user removed or changed in `humanized_prompt.md`.
+
 ## Verdict Discipline - PASS Has a High Burden of Proof
 
 Treat `PASS` as an exceptional verdict. The default posture is **NOT YET PROVEN** until the patch survives the complete adversarial process below.
@@ -24,7 +28,7 @@ Do not use subjective optimism such as "looks correct", "seems safe", "probably 
 
 ## S1 - Requirement Completeness
 
-Atomize `problem.md` into independently observable requirements and trace each through the implementation.
+Trace the **at-most-13 top-level requirements** in `humanized_prompt.md` through the implementation. Do not inflate the requirement count by splitting examples, branches, boundaries, or edge cases that belong to the same governing behavior or invariant; trace those as subcases of the parent requirement. If the description genuinely contains more than 13 unrelated top-level requirements, report that as a blocking problem-description defect.
 
 Verify every requirement is implemented across every required path, not only:
 
@@ -195,7 +199,7 @@ The solution should look like a maintainer-authored patch.
 
 After S1-S12, assume every defect already found has been fixed and ask:
 
-> What DIFFERENT valid execution path would still violate the problem statement?
+> What DIFFERENT valid execution path would still violate the active task contract?
 
 Then ask:
 
@@ -230,7 +234,7 @@ Severity guidance:
 
 PASS is forbidden until you complete all of the following in the current fresh audit:
 
-1. **Requirement trace:** map every independently observable requirement to the exact implementation path(s) that enforce it.
+1. **Requirement trace:** map each of the at-most-13 top-level requirements, including its relevant subcases, to the exact implementation path(s) that enforce it.
 2. **Counterexample execution:** invent realistic valid executions that vary ordering, state, representation, caller, failure, and repetition where relevant; trace them through the patched code.
 3. **Root-cause challenge:** restate the invariant that was broken and prove the patch restores that invariant generally rather than only for the reproduction/tests.
 4. **Lifecycle challenge:** inspect before/during/after, pending/committed/cleared, failure/retry/cancellation, and subsequent-operation behavior whenever applicable.

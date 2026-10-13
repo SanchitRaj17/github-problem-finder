@@ -7,7 +7,8 @@
 ## Problem Checks
 | Check | Requirement |
 |-------|-------------|
-| description_length | Prefer under 200 words; hard maximum 1000 words when completeness/fairness requires it |
+| description_length | Target 200 words or fewer; exceed only when necessary for completeness/fairness; hard maximum 1000 words |
+| requirement_count | Hard maximum 13 total requirements; group related cases under one coherent behavioral rule instead of counting every edge case separately |
 | category_match | Bug/Feature/Enhancement matches content |
 | Problem AI difficulty | Genuinely hard for AI |
 | Problem Quality Check | Well-structured, clear |

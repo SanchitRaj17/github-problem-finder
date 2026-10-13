@@ -1,8 +1,10 @@
 # Test Writing Tips
 
+After the manual handoff, `humanized_prompt.md` is the authoritative task contract. The original `problem.md` is frozen and non-authoritative for downstream patch scope.
+
 Use this file while constructing tests. Exhaustive adversarial validation belongs to the Test Validator in `references/test-validator.md`; do not duplicate that full audit in the main agent.
 
-- No surprise tests: everything tested must be part of the requirements or clearly discoverable from the repository.
+- No surprise tests: everything tested must be part of the active `humanized_prompt.md` requirements or clearly discoverable from the repository.
 - Strong tests: tests must reject materially inaccurate solutions, not merely prove that code executes.
 - Extensive coverage: cover the requested behavior and all obvious relevant boundaries, states, interactions, negative cases, and sibling paths.
 - Tests are not brittle: avoid over-constraint and implementation-specific expectations.
@@ -12,6 +14,7 @@ Use this file while constructing tests. Exhaustive adversarial validation belong
 - Do not over-pin exact error text, messages, wording, formatting, or incidental output unless the description requires it or the repository clearly establishes it as contract.
 - Keep real failure diagnostics intact. Do not hide assertion failures or upstream errors behind hardcoded catch-all reporting.
 - Prefer observable behavior over private implementation details.
+- Do not make tests artificially airtight. Add discriminators for material required behavior, not every theoretical difference the reference happens to support. False-positive caveats that are secondary or disproportionate to solvability may remain non-blocking.
 
 ## Construction Questions
 

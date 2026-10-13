@@ -105,7 +105,7 @@ diff --git a/path/to/file.py b/path/to/file.py
 
 ## Problem/Test Alignment Checklist
 
-- Every claim in problem.md is directly covered by at least one new test
+- Every claim in the active `humanized_prompt.md` contract is directly covered by at least one new test
 - Remove or trim any untested claims early
 - Avoid introducing requirements not exercised by tests
 ## Test Quality Rubric
